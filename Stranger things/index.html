@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stranger Things | The Full Experience</title>
+    <style>
+        :root {
+            --blood-red: #e20000;
+            --upside-blue: #00d4ff;
+            --bg-black: #050505;
+        }
+
+        body {
+            background: var(--bg-black);
+            color: white;
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            overflow-x: hidden;
+            transition: filter 0.1s;
+        }
+
+        /* --- THUNDER & LIGHTNING DESIGN --- */
+        #thunder-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 10001;
+            transition: opacity 0.05s ease-out;
+        }
+
+        #lightning-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10002;
+        }
+
+        .lightning-bolt {
+            position: absolute;
+            stroke: #fff;
+            stroke-width: 4;
+            fill: none;
+            filter: drop-shadow(0 0 10px var(--upside-blue)) drop-shadow(0 0 20px #fff);
+        }
+
+        .shake {
+            animation: shake-anim 0.3s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        .glitch-text {
+            text-shadow: 2px 0 var(--blood-red), -2px 0 var(--upside-blue);
+        }
+
+        @keyframes shake-anim {
+            10%, 90% { transform: translate3d(-4px, -2px, 0); }
+            20%, 80% { transform: translate3d(6px, 4px, 0); }
+            30%, 50%, 70% { transform: translate3d(-10px, -6px, 0); }
+            40%, 60% { transform: translate3d(10px, 6px, 0); }
+        }
+
+        /* --- HERO & UI --- */
+        .hero {
+            height: 60vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle, #1a0505 0%, #050505 100%);
+        }
+
+        .st-logo {
+            font-family: 'Crimson Text', serif;
+            font-size: clamp(3rem, 12vw, 8rem);
+            text-transform: uppercase;
+            color: transparent;
+            -webkit-text-stroke: 2px var(--blood-red);
+            text-align: center;
+            line-height: 0.8;
+            letter-spacing: -2px;
+            animation: glow 3s infinite alternate;
+        }
+
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 10px var(--blood-red), 0 0 20px var(--blood-red); opacity: 1; }
+            50% { text-shadow: 0 0 40px var(--blood-red), 0 0 60px #ff4d4d; opacity: 0.7; }
+        }
+
+        .portal-btn {
+            margin-top: 30px;
+            padding: 15px 35px;
+            background: transparent;
+            color: var(--blood-red);
+            border: 2px solid var(--blood-red);
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: 0.4s;
+            z-index: 10;
+        }
+
+        .portal-btn:hover {
+            background: var(--blood-red);
+            color: white;
+            box-shadow: 0 0 25px var(--blood-red);
+        }
+
+        /* --- PORTAL OVERLAY --- */
+        #portal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            background: black;
+            cursor: crosshair;
+        }
+
+        .portal-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .vecna-reveal { background-image: url('vecnabg.jpg'); z-index: 1; }
+        #scratch-canvas { position: absolute; top: 0; left: 0; z-index: 2; }
+        .close-portal { position: absolute; top: 20px; right: 20px; z-index: 10000; color: white; background: rgba(255,0,0,0.8); border: none; padding: 10px 20px; cursor: pointer; }
+
+        /* --- GRID SYSTEM --- */
+        .section-title { 
+            text-align: center; 
+            color: var(--blood-red); 
+            text-transform: uppercase; 
+            letter-spacing: 8px; 
+            margin: 60px 0 40px; 
+            font-family: 'Crimson Text', serif; 
+            font-size: 2.5rem; 
+        }
+
+        .grid-party, .grid { 
+            display: grid; 
+            gap: 30px; 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 0 40px; 
+        }
+
+        .grid-party { grid-template-columns: repeat(3, 1fr); }
+        .grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+
+        .character-card { height: 450px; perspective: 1000px; cursor: pointer; }
+        .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
+        .character-card:hover .card-inner { transform: rotateY(180deg); }
+        
+        .front, .back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 10px; border: 2px solid #222; overflow: hidden; }
+        .front { background-size: cover; background-position: center; display: flex; align-items: flex-end; }
+        .front::after { content: ''; position: absolute; bottom: 0; width: 100%; height: 50%; background: linear-gradient(transparent, black); }
+        
+        .name-label { position: relative; z-index: 2; padding: 20px; font-weight: bold; letter-spacing: 2px; font-size: 1.5rem; text-transform: uppercase; }
+        
+        .back { background: linear-gradient(135deg, #000 0%, #001a2d 100%); transform: rotateY(180deg); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 30px; text-align: center; box-shadow: inset 0 0 50px var(--upside-blue); }
+        .monster .back { background: linear-gradient(135deg, #000 0%, #300 100%); box-shadow: inset 0 0 50px var(--blood-red); }
+        
+        .back h3 { color: var(--upside-blue); margin-bottom: 15px; font-size: 1.8rem; letter-spacing: 2px; }
+        .monster .back h3 { color: var(--blood-red); }
+        .back p { font-family: 'Courier New', monospace; color: #eee; min-height: 4.5em; }
+        
+        .ash { position: fixed; background: rgba(255, 255, 255, 0.2); border-radius: 50%; pointer-events: none; z-index: 100; }
+        
+        @media (max-width: 900px) { .grid-party { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 600px) { .grid-party { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+    <div id="thunder-overlay"></div>
+    <div id="lightning-container"></div>
+
+    <div id="portal-overlay">
+        <button class="close-portal" onclick="closePortal()">BACK TO STORYBOARD</button>
+        <div class="portal-layer vecna-reveal"></div>
+        <canvas id="scratch-canvas"></canvas>
+    </div>
+
+    <section class="hero">
+        <h1 class="st-logo" id="main-logo">Stranger Things</h1>
+        <p style="letter-spacing: 8px; color: #777;">THE COMPLETE STORYBOARD</p>
+        <button class="portal-btn" onclick="openPortal()">Enter Eleven's Mind</button>
+    </section>
+
+    <h2 class="section-title">The Party</h2>
+    <div class="grid-party">
+        <div class="character-card" data-quote="&quot;Friends don't lie.&quot;">
+            <div class="card-inner">
+                <div class="front" style="background-image: url('eleven.jpg');"><div class="name-label">ELEVEN</div></div>
+                <div class="back"><h3>THE MAGE</h3><p class="typewriter"></p></div>
+            </div>
+        </div>
+        <div class="character-card" data-quote="&quot;If we're both going crazy, then we'll go crazy together.&quot;">
+            <div class="card-inner">
+                <div class="front" style="background-image: url('mike.jpg');"><div class="name-label">MIKE</div></div>
+                <div class="back"><h3>THE PALADIN</h3><p class="typewriter"></p></div>
+            </div>
+        </div>
+        <div class="character-card" data-quote="&quot;He likes it cold.&quot;">
+            <div class="card-inner">
+                <div class="front" style="background-image: url('will.jpg');"><div class="name-label">WILL</div></div>
+                <div class="back"><h3>THE CLERIC</h3><p class="typewriter"></p></div>
+            </div>
+        </div>
+        <div class="character-card" data-quote="&quot;Why are you keeping this curiosity door locked?&quot;">
+            <div class="card-inner">
+                <div class="front" style="background-image: url('dustin.jpg');"><div class="name-label">DUSTIN</div></div>
+                <div class="back"><h3>THE BARD</h3><p class="typewriter"></p></div>
+            </div>
+        </div>
+        <div class="character-card" data-quote="&quot;I'm still here.&quot;">
+            <div class="card-inner">
+                <div class="front" style="background-image: url('max.jpg');"><div class="name-label">MAX</div></div>
+                <div class="back"><h3>THE ZOOMER</h3><p class="typewriter"></p></div>
+            </div>
+        </div>
+        <div class="character-card" data-quote="&quot;It's the rules. No more adventuring.&quot;">
+            <div class="card-inner">
+                <div class="front" style="background-image: url('lucas.jpg');"><div class="name-label">LUCAS</div></div>
+                <div class="back"><h3>THE RANGER</h3><p class="typewriter"></p></div>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="section-title">The Protectors</h2>
+    <div class="grid">
+        <div class="character-card" data-quote="&quot;I'm a natural at this. I'm a babysitter!&quot;">
+            <div class="card-inner">
+                <div class="front" style="background-image: url('steve.jpg');"><div class="name-label">STEVE</div></div>
+                <div class="back"><h3>THE BABYSITTER</h3><p class="typewriter"></p></div>
+            </div>
+        </div>
+        <div class="character-card" data-quote="&quot;Mornings are for coffee and contemplation.&quot;">
+            <div class="card-inner">
+                <div class="front" style="background-image: url('hopper.jpg');"><div class="name-label">HOPPER</div></div>
+                <div class="back"><h3>THE CHIEF</h3><p class="typewriter"></p></div>
+            </div>
+        </div>
+        <div class="character-card" data-quote="&quot;I don't care if anyone believes me!&quot;">
+            <div class="card-inner">
+                <div class="front" style="background-image: url('joyce.jpg');"><div class="name-label">JOYCE</div></div>
+                <div class="back"><h3>THE MOTHER</h3><p class="typewriter"></p></div>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="section-title">The Upside Down</h2>
+    <div class="grid">
+        <div class="character-card monster" data-quote="&quot;Your suffering is almost at an end.&quot;">
+            <div class="card-inner">
+                <div class="front" style="background-image: url('vecna.jpg');"><div class="name-label">VECNA</div></div>
+                <div class="back"><h3>001</h3><p class="typewriter"></p></div>
+            </div>
+        </div>
+        <div class="character-card monster" data-quote="&quot;Guttural Screeching&quot;">
+            <div class="card-inner">
+                <div class="front" style="background-image: url('demogorgon.jpg');"><div class="name-label">DEMOGORGON</div></div>
+                <div class="back"><h3>THE BEAST</h3><p class="typewriter"></p></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const portal = document.getElementById('portal-overlay');
+        const thunder = document.getElementById('thunder-overlay');
+        const lContainer = document.getElementById('lightning-container');
+        const canvas = document.getElementById('scratch-canvas');
+        const ctx = canvas.getContext('2d');
+        const bgImage = new Image();
+        bgImage.src = 'elevenbg.jpg';
+
+        let scratches = [];
+        let thunderInterval;
+
+        function initCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if (bgImage.complete) ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+        }
+
+        // --- DYNAMIC LIGHTNING BOLTS ---
+        function createLightning() {
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.setAttribute("width", "100%");
+            svg.setAttribute("height", "100%");
+            svg.style.position = "absolute";
+            
+            const startX = Math.random() * window.innerWidth;
+            let currentX = startX;
+            let currentY = 0;
+            let points = `${currentX},${currentY}`;
+
+            for (let i = 0; i < 10; i++) {
+                currentX += (Math.random() - 0.5) * 150;
+                currentY += (window.innerHeight / 10);
+                points += ` ${currentX},${currentY}`;
+            }
+
+            const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+            polyline.setAttribute("points", points);
+            polyline.classList.add("lightning-bolt");
+            
+            svg.appendChild(polyline);
+            lContainer.appendChild(svg);
+
+            setTimeout(() => svg.remove(), 150);
+        }
+
+        function triggerThunder() {
+            if (portal.style.display !== 'block') return;
+
+            // Flash Intensity
+            thunder.style.opacity = (Math.random() * 0.6) + 0.3;
+            document.body.classList.add('shake');
+            document.getElementById('main-logo').classList.add('glitch-text');
+            
+            createLightning();
+
+            setTimeout(() => {
+                thunder.style.opacity = 0;
+                document.body.classList.remove('shake');
+                document.getElementById('main-logo').classList.remove('glitch-text');
+            }, 200);
+
+            // Schedule next strike
+            thunderInterval = setTimeout(triggerThunder, Math.random() * 4000 + 2000);
+        }
+
+        function openPortal() { 
+            portal.style.display = 'block'; 
+            initCanvas();
+            requestAnimationFrame(updateScratch);
+            triggerThunder();
+        }
+        
+        function closePortal() { 
+            portal.style.display = 'none'; 
+            clearTimeout(thunderInterval);
+            thunder.style.opacity = 0;
+            scratches = [];
+        }
+
+        // --- SCRATCH REVEAL LOGIC (5 SECONDS PERSISTENCE) ---
+        window.addEventListener('mousemove', (e) => {
+            if (portal.style.display === 'block') {
+                scratches.push({ x: e.clientX, y: e.clientY, timestamp: Date.now() });
+            }
+        });
+
+        function updateScratch() {
+            if (portal.style.display === 'none') return;
+            const now = Date.now();
+            const PERSIST_TIME = 5000;
+            scratches = scratches.filter(s => now - s.timestamp < PERSIST_TIME);
+            
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+            
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+
+            if (scratches.length > 1) {
+                for (let i = 1; i < scratches.length; i++) {
+                    const p1 = scratches[i - 1];
+                    const p2 = scratches[i];
+                    if (p2.timestamp - p1.timestamp < 100) {
+                        const lifeFactor = 1 - ((now - p2.timestamp) / PERSIST_TIME);
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineWidth = 90 * lifeFactor;
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(updateScratch);
+        }
+
+        // --- CHARACTER CARDS TYPEWRITER ---
+        document.querySelectorAll('.character-card').forEach(card => {
+            const quote = card.getAttribute('data-quote');
+            const target = card.querySelector('.typewriter');
+            let isTyping = false;
+            
+            card.addEventListener('mouseenter', () => {
+                if (!isTyping) {
+                    isTyping = true;
+                    target.innerHTML = '';
+                    let i = 0;
+                    function type() {
+                        if (i < quote.length && isTyping) {
+                            target.innerHTML += quote.charAt(i++);
+                            setTimeout(type, 40);
+                        }
+                    }
+                    type();
+                }
+            });
+            card.addEventListener('mouseleave', () => { isTyping = false; });
+        });
+
+        // --- ASH EFFECT ---
+        setInterval(() => {
+            const ash = document.createElement('div');
+            ash.classList.add('ash');
+            const size = Math.random() * 4 + 'px';
+            ash.style.width = size; ash.style.height = size;
+            ash.style.left = Math.random() * 100 + 'vw';
+            ash.style.top = '-5vh';
+            document.body.appendChild(ash);
+            
+            const duration = Math.random() * 5000 + 5000;
+            ash.animate([
+                { transform: 'translate(0,0)', opacity: 0 }, 
+                { opacity: 0.5, offset: 0.2 }, 
+                { transform: `translate(${Math.random()*100-50}px, 105vh)`, opacity: 0 }
+            ], { duration: duration });
+            
+            setTimeout(() => ash.remove(), duration);
+        }, 200);
+
+        window.addEventListener('resize', initCanvas);
+        bgImage.onload = initCanvas;
+    </script>
+</body>
+</html>
